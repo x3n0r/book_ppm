@@ -23,4 +23,3 @@ PRO0027515 - 22206001 - Az France	 3,37
     if the checkbox is selected Browser will open and input the entries
     if it is NOT selected an Outputwindow will open where you can see the output.
 - Select Submit
-
