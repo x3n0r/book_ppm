@@ -5,5 +5,5 @@ COUNTRY_CODE    = 'AT' #For holiday API country code. Goto https://date.nager.at
 #book_ppm_gui
 SETTINGS_FILE           = 'settings.json'   #Filename
 DEFAULT_THEME           = 'DarkBlue3'       #Default Theme
-DEBUG                   = True              #Can be set to set some default variables
+DEBUG                   = False              #Can be set to set some default variables
 DEFAULT_TRANSPERENCY    = 1.0               #Transperency can be changed e.g. 0.5
