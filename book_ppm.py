@@ -19,6 +19,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
 
 from book_ppm_settings import *
+from book_ppm_version import *
 
 #disable InsecureRequestWarning: Unverified HTTPS request is being made to host 'date.nager.at'. Adding certificate verification is strongly advised. warning
 # See: https://urllib3.readthedocs.io/en/latest/user-guide.html#ssl to solve this issue
@@ -534,7 +535,6 @@ if __name__ == '__main__':
     #print(response.json())
     #print(response.json()["name"])
     #zipball_url
-    #exit(0)
     output = main()
     if output:
         print(output)

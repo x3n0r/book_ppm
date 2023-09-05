@@ -8,6 +8,7 @@ from calendar import Calendar, monthrange
 from datetime import datetime
 import os.path
 import os
+from book_ppm_version import *
 from book_ppm import main
 from book_ppm import output_date_to_stdout
 from book_ppm import testText
