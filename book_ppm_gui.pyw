@@ -4,6 +4,7 @@
 import PySimpleGUI as sg
 
 import calendar
+from calendar import Calendar, monthrange
 from datetime import datetime
 import os.path
 import os
@@ -163,6 +164,37 @@ def make_settings_window():
     window.close()
     return [sg.theme(), useFont]
 
+# window for output when brosergui is not used
+def make_absence_window(inputMonth=8,inputYear=2023):
+    inputDate=datetime(int(inputYear), int(inputMonth), 1)
+
+    checkBoxArray1=[]
+    checkBoxArray2=[]
+    checkBoxArrayActual=checkBoxArray1
+    count=0
+    for d in [x for x in Calendar().itermonthdates(inputYear, inputMonth) if x.month == inputMonth]:
+        if d.isoweekday() > 5:
+            continue
+        if count >= 15:
+            checkBoxArrayActual = checkBoxArray2
+        print(d)
+        checkBoxArrayActual.append([sg.Checkbox(d,default=False,key='-'+str(d)+'-')])
+        count+=1
+
+    #for d in [x for x in Calendar().itermonthdates(inputYear, inputMonth) if x.month == 7]:
+
+    layoutL = checkBoxArray1
+    layoutR = checkBoxArray2
+
+    layout = [
+        [sg.Col(layoutL, p=0), sg.Col(layoutR, p=0)],
+        [sg.Button('Ok')]
+    ]
+
+    window = sg.Window('Absence Days', layout, keep_on_top=True, use_custom_titlebar=sg.MenubarCustom,resizable=False,finalize=True,size=(220,550) )
+
+    return window
+
 #simple gui settings saved to %LocalAppData%\PySimpleGUI with filename saved in SETTINGS_FILE
 settings = sg.UserSettings(filename=SETTINGS_FILE)
 settings.load()
@@ -187,15 +219,44 @@ while True:
             window = make_main_window()
 
     if event  == 'Submit':
-        #run book_ppm program
+
         year = int(values['-inputYear-'])
         month = datetime.strptime(values['-inputMonth-'], '%B').month 
         text = values['-inputText-']
         useBrowserUI = values['-useBrowserUI-']
+
+        if text == "" and not DEBUG:
+            continue
+
+        answer = sg.popup_yes_no("Do you have any absence day to book(except holidays)?",  title="YesNo", keep_on_top=True)
+        #print ("You clicked", answer)
+        clickedAbsence=[]
+        winClosed = False
+        if answer == 'Yes':
+            absence_window = make_absence_window(inputYear=year,inputMonth=month)
+            while True:
+                event, values = absence_window.read()
+                if event == sg.WIN_CLOSED or event == 'Exit':
+                    winClosed = True
+                    break
+                if event == "Ok":
+                    #print("GetAll Clicked Items")
+
+                    for d in [x for x in Calendar().itermonthdates(year, month) if x.month == month]:
+                        if d.isoweekday() > 5:
+                            continue    
+                        value = values['-'+str(d)+'-']
+                        if value:
+                            clickedAbsence.append(str(d))
+                    break
+        if winClosed:
+            continue
+
+        #run book_ppm program
         if text != "" or DEBUG:
             if DEBUG:
                 text=testText
-            output = main(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI)
+            output = main(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI,absence=clickedAbsence)
             make_output_window(output)
 
 window.close()
