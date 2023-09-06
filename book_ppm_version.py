@@ -1,4 +1,4 @@
-version="V1.0.1"
+version="V1.0.2"
 
 #function to check if version is greater or lower
 def versiontuple(v):
