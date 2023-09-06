@@ -7,4 +7,5 @@ SETTINGS_FILE           = 'settings.json'   #Filename
 DEFAULT_THEME           = 'DarkBlue3'       #Default Theme
 DEBUG                   = False             #Can be set to set some default variables
 DEFAULT_TRANSPERENCY    = 1.0               #Transperency can be changed e.g. 0.5
-LOGGER                  = False           
+LOGGER                  = False             #print logger statements to console
+TESTUPDATE              = False             #If set to true updater will extract to temporary folder in downloads not directly to root-folder           

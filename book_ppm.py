@@ -8,6 +8,11 @@ import time
 import datetime
 import calendar
 import json
+import os
+import zipfile
+import shutil
+import subprocess
+import sys
 
 import requests
 from urllib3.exceptions import InsecureRequestWarning
@@ -19,7 +24,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
 
 from book_ppm_settings import *
-from book_ppm_version import *
+from book_ppm_version import version as book_ppm_version
+from book_ppm_version import versiontuple
 
 #disable InsecureRequestWarning: Unverified HTTPS request is being made to host 'date.nager.at'. Adding certificate verification is strongly advised. warning
 # See: https://urllib3.readthedocs.io/en/latest/user-guide.html#ssl to solve this issue
@@ -32,6 +38,8 @@ PROJECT_URL     = 'https://aztech.service-now.com/tcp'
 holiday_api     = f'https://date.nager.at/api/v3/publicholidays/'
 holidays = []
 HOLIDAYSSET = False
+
+gitHubJsonResponse = None
 
 #Debug string for explicit run
 testText="""PRO0001998 - 22201165 - ABSi Project Budget	 3,37
@@ -530,11 +538,57 @@ def main(inputMonth=8,inputYear=2023,inputText=testText,useUI=False,absence=[]):
 
     return output
 
+def getGitHubResponse():
+    global gitHubJsonResponse
+    r = requests.get("https://api.github.com/repos/x3n0r/book_ppm/releases/latest")
+    gitHubJsonResponse = r.json()
+    debugLogger(gitHubJsonResponse)
+
+def VersionUpdateNeeded():
+    if not gitHubJsonResponse:
+        getGitHubResponse()
+    debugLogger(gitHubJsonResponse["name"] + " > " + book_ppm_version)
+    return versiontuple(gitHubJsonResponse["name"]) > versiontuple(book_ppm_version)
+
+def getGitHubRelease():
+    if not gitHubJsonResponse:
+        getGitHubResponse()
+    return gitHubJsonResponse["name"]
+
+def getGitHubBody():
+    if not gitHubJsonResponse:
+        getGitHubResponse()
+    return gitHubJsonResponse["body"]
+
+def getGitHubDownload():
+    if not gitHubJsonResponse:
+        getGitHubResponse()
+    print(gitHubJsonResponse["zipball_url"])
+    actualDirectory = os.getcwd()
+    downloadDirectory = actualDirectory + "\\" + "downloads"
+    if os.path.isdir(downloadDirectory):
+        shutil.rmtree(downloadDirectory)
+    downloadFullPath = downloadDirectory + "\\" + "book_ppm_" + gitHubJsonResponse["name"] + ".zip"
+    if not os.path.isdir(downloadDirectory):
+        os.makedirs(downloadDirectory)
+        debugLogger("created folder : " + downloadDirectory)
+    else:
+        debugLogger("folder already exists: " + downloadDirectory)
+    r = requests.get(gitHubJsonResponse["zipball_url"], allow_redirects=True)
+    open(downloadFullPath, 'wb').write(r.content)
+    shutil.unpack_archive(downloadFullPath, downloadDirectory)
+    createdFolder = downloadDirectory + "\\" + next(os.walk(downloadDirectory))[1][0]
+    destinationFolder = actualDirectory
+    if TESTUPDATE:
+        destinationFolder = downloadDirectory 
+    shutil.copytree(createdFolder, destinationFolder, dirs_exist_ok=True)
+    print("open new folder")
+    openApp=destinationFolder + "\\" + "book_ppm_gui.pyw"
+    print(openApp)
+    subprocess.Popen([sys.executable, openApp])
+
 if __name__ == '__main__':
-    #response = requests.get("https://api.github.com/repos/x3n0r/book_ppm/releases/latest")
-    #print(response.json())
-    #print(response.json()["name"])
-    #zipball_url
-    output = main()
-    if output:
-        print(output)
+    if DEBUG:
+        output = main()
+        if output:
+            print(output)
