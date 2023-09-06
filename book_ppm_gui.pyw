@@ -8,8 +8,9 @@ from calendar import Calendar, monthrange
 from datetime import datetime
 import os.path
 import os
-from book_ppm_version import *
+from book_ppm_version import version as book_ppm_version
 from book_ppm import main
+from book_ppm import VersionUpdateNeeded, getGitHubRelease, getGitHubBody, getGitHubDownload
 from book_ppm import output_date_to_stdout
 from book_ppm import testText
 from book_ppm_settings import *
@@ -24,9 +25,9 @@ DEFAULT_FONT        = 'Courier'
 DEFAULT_FONTSIZE    = 10
 
 # function which return a simplegui text where Spacers are set
-def name(name):
-    dots = NAME_SIZE-len(name)-2
-    return sg.Text(name + ' ' + '•'*dots, size=(NAME_SIZE,1), justification='r',pad=(0,0), font=(settings.get('FONT', DEFAULT_FONT),DEFAULT_FONTSIZE))
+def name(name, size=NAME_SIZE):
+    dots = size-len(name)-2
+    return sg.Text(name + ' ' + '•'*dots, size=(size,1), justification='r',pad=(0,0), font=(settings.get('FONT', DEFAULT_FONT),DEFAULT_FONTSIZE))
 
 # create the main window
 def make_main_window(theme=None):
@@ -42,7 +43,7 @@ def make_main_window(theme=None):
         years.append(str(x))
 
     layout = [
-        [ sg.MenubarCustom([['File', ['Settings','Exit']]],  k='-CUST MENUBAR-',p=0)],
+        [ sg.MenubarCustom([['File', ['Settings', 'Update','Exit']]],  k='-CUST MENUBAR-',p=0)],
         [ sg.Sizer(50,25)],
         [ name('Year') , sg.Spin(years,initial_value=str(year), s=(15,2), readonly=True,key='-inputYear-') ],
         [ name('Month'), sg.Spin(months,initial_value=calendar.month_name[datetime.now().month], s=(15,2), readonly=True,key='-inputMonth-') ],
@@ -53,7 +54,7 @@ def make_main_window(theme=None):
         [ sg.Sizer(50,25)],
     ]
 
-    window = sg.Window('The PySimpleGUI Element List', layout, keep_on_top=True, use_custom_titlebar=sg.MenubarCustom,resizable=True,alpha_channel=DEFAULT_TRANSPERENCY)
+    window = sg.Window('PPM Booker', layout, keep_on_top=True, use_custom_titlebar=sg.MenubarCustom,resizable=True,alpha_channel=DEFAULT_TRANSPERENCY)
 
     return window
 
@@ -196,6 +197,27 @@ def make_absence_window(inputMonth=8,inputYear=2023):
 
     return window
 
+def make_update_window():
+    layoutL = [
+        [ name('Actual Release', size=20) , sg.Text(book_ppm_version) ],
+        [ name('GitHub Release', size=20) , sg.Text(getGitHubRelease()) ],
+        [ sg.Button('Update', disabled = not VersionUpdateNeeded())  ],
+        [ sg.Button('Ok') ],
+    ]
+
+    layoutR = [
+        [ sg.Text("Latest/Newest Changelog:") ],
+        [ sg.Multiline(s=(50,5),default_text=getGitHubBody(), disabled=True, size=(100,100))],
+    ]
+
+    layout = [
+        [sg.Col(layoutL, p=0), sg.Col(layoutR, p=0)],
+    ]
+
+    window = sg.Window('Auto Updater', layout, keep_on_top=True, use_custom_titlebar=sg.MenubarCustom,resizable=False,finalize=True, size=(800,300) )
+
+    return window
+
 #simple gui settings saved to %LocalAppData%\PySimpleGUI with filename saved in SETTINGS_FILE
 settings = sg.UserSettings(filename=SETTINGS_FILE)
 settings.load()
@@ -219,8 +241,20 @@ while True:
             settings.save()
             window = make_main_window()
 
-    if event  == 'Submit':
+    if event == 'Update':
+        update_window = make_update_window()
+        while True:
+            event, values = update_window.read()
+            if event == sg.WIN_CLOSED or event == 'Ok':
+                update_window.close()
+                break
+            if event == 'Update':
+                getGitHubDownload()
+                update_window.close()
+                window.close()
+                break
 
+    if event  == 'Submit':
         year = int(values['-inputYear-'])
         month = datetime.strptime(values['-inputMonth-'], '%B').month 
         text = values['-inputText-']
