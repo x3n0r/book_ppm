@@ -27,6 +27,9 @@ PRO0027515 - 22206001 - Az France	 3,37
 - Answer question if you have any Absence days(without holidays)
 - When you click yes a new Window will appear where you can select all the days where you want to input an absence
 
+## Update App
+In the menu bar you will find a Update button. A new Window will appear where the app will check if there are any updates if yes the Update-button will be enabled.
+During the Update the latest app will be downloaded from github.com. After that it will get unpacked, copied to the right destination and the app will be automatically started.
 
 ## Settings
 Settings can be deleted by deleting the file `%LocalAppData%\PySimpleGUI\settings\settings.json`
