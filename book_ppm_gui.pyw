@@ -15,6 +15,7 @@ from book_ppm import output_date_to_stdout
 from book_ppm import testText
 from book_ppm_settings import *
 import json
+import Toggle
 
 ALL_FONTS = sg.Text.fonts_installed_list()
 
@@ -41,11 +42,18 @@ def make_main_window(theme=None):
     for x in range(year-1, year+2):
         years.append(str(x))
 
+    ButtonTest = Toggle.Toggle(settings.get('TOGGLE', True))
+
     layout = [
         [ sg.MenubarCustom([['File', ['Settings', 'Update','Exit']]],  k='-CUST MENUBAR-',p=0)],
         [ sg.Sizer(50,25)],
         [ name('Year') , sg.Spin(years,initial_value=str(year), s=(15,2), readonly=True,key='-inputYear-') ],
         [ name('Month'), sg.Spin(months,initial_value=calendar.month_name[datetime.now().month], s=(15,2), readonly=True,key='-inputMonth-') ],
+        [ 
+            sg.Text(' UsedDaily', justification='r',pad=(0,0), font=(settings.get('FONT', DEFAULT_FONT),DEFAULT_FONTSIZE)),
+            sg.Button(image_data=ButtonTest.getImage(),metadata=ButtonTest,key='-TOGGLE-GRAPHIC-', button_color=(sg.theme_background_color(), sg.theme_background_color()), border_width=0 ) ,
+            sg.Text('UsedMonthly', justification='r',pad=(0,0), font=(settings.get('FONT', DEFAULT_FONT),DEFAULT_FONTSIZE))
+        ],
         [ sg.Multiline(s=(50,5),default_text='',key='-inputText-')],
         [ sg.HSep()],
         [ sg.Checkbox('UseBrowserUi',default=(not DEBUG),key='-useBrowserUI-')],
@@ -229,6 +237,9 @@ def main_gui():
 
     while True:
         event, values = window.read()
+        if event == '-TOGGLE-GRAPHIC-':  # if the graphical button that changes images
+            window['-TOGGLE-GRAPHIC-'].update(image_data=window['-TOGGLE-GRAPHIC-'].metadata.toggle())
+
         if event == sg.WIN_CLOSED or event == 'Exit':
             break
         if event == 'Settings':
@@ -256,10 +267,15 @@ def main_gui():
                     break
 
         if event  == 'Submit': 
+
             year = int(values['-inputYear-'])
             month = datetime.strptime(values['-inputMonth-'], '%B').month 
             text = values['-inputText-']
             useBrowserUI = values['-useBrowserUI-']
+            usedPerMonth = window['-TOGGLE-GRAPHIC-'].metadata.state
+
+            settings['TOGGLE'] = usedPerMonth
+            settings.save()
 
             if text == "" and not DEBUG:
                 continue
@@ -292,7 +308,7 @@ def main_gui():
             if text != "" or DEBUG:
                 if DEBUG:
                     text=testText
-                output = main_no_gui(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI,absence=clickedAbsence)
+                output = main_no_gui(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI,absence=clickedAbsence, usedPerMonth=usedPerMonth)
                 make_output_window(output)
 
     window.close()

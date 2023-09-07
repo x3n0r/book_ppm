@@ -42,12 +42,18 @@ HOLIDAYSSET = False
 gitHubJsonResponse = None
 
 #Debug string for explicit run
-testText="""PRO0001998 - 22201165 - ABSi Project Budget	 3,37
-PRO0024238 - ABS Core Budget	 159,21
-PRO0027515 - 22206001 - Az France	 3,37"""
+#testText="""PRO0001998 - 22201165 - ABSi Project Budget	 3,37
+#PRO0024238 - ABS Core Budget	 159,21
+#PRO0027515 - 22206001 - Az France	 3,37"""
 
 #testText="""PRO0001998 - 22201165 - ABSi Project Budget	 3,37"""
 
+testText="""PRO1 - adsdsds -2332- ds-sdf- 2023-08-28 4
+PRO2 - adsdsds xdvdfdf- 2023-08-28 5
+PRO1 - adsdsds -2332- ds-sdf- 2023-08-28 4
+PRO2 - adsdsds xdvdfdf- 2023-08-28 5
+PRO3 - adsdsds -2//fdss-s  df- 2023-08-27 7,7
+"""
 
 #column definition of ppm website
 colDefinition={
@@ -159,46 +165,6 @@ def get_next_business_day(dt):
         dt += datetime.timedelta(days=1)
     return dt
 
-#Deprecated output_date_to_stdout used
-def output_project_to_stdout(output):
-    for project in output:
-        print(project)
-        for date in output[project]:
-            date_string = f"{date:%Y-%m-%d %A}"
-            print(f"{date_string:<22} {output[project][date]:.2f} hours")
-            #Output a newline after a workweek
-            if date.isoweekday() == 5:
-                print("")
-        print()
-
-#Deprecated generate_with_leading_date_name used
-def generate_with_leading_project_name(inputText,inputDate,start_day):
-    output = {}
-    for line in inputText.splitlines():
-
-        inputText = line.split(" ")
-        project_name=inputText[0]
-        project_duration=float(inputText[len(inputText)-1].replace(",","."))
-        output[project_name] = {}
-
-        while True:
-            daily_duration = 8.0 if project_duration >= 8 else project_duration
-            project_duration -= daily_duration
-
-            if output[project_name].get(start_day) is not None:
-                output[project_name][start_day] += daily_duration
-            else:
-                output[project_name][start_day] = daily_duration
-
-            next_day = get_next_business_day(start_day)
-            if int(next_day.month) > int(start_day.month):
-                start_day = get_first_business_day(inputDate.year, inputDate.month)
-            else:
-                start_day = next_day
-            if project_duration <= 0:
-                break
-    return output
-
 #output to stdout
 def output_date_to_stdout(output):
     for date in output:
@@ -212,20 +178,34 @@ def output_date_to_stdout(output):
         if date.isoweekday() == 5:
             print("")
 
-# Leading date was easier then leading project to get it right
-def generate_with_leading_date(inputText,inputDate,start_day):
-    output = {}
+def generate_with_leading_date_daily(inputText,inputDate,start_day,output):
+    for line in inputText.splitlines():
+        inputText = line.split(" ")
+        project_name=inputText[0]
+        project_date=inputText[-2]
+        project_duration=inputText[-1].replace(",",".")
+        if float(project_duration) > 24:
+            raise Exception(f"You are not allowed to book more than 24 hours a day!")
 
+        date_format = '%Y-%m-%d'
+        date_obj = datetime.datetime.strptime(project_date, date_format)
+
+        if output.get(date_obj) is not None:
+            if output[date_obj].get('Absence') is not None:
+                raise Exception(f"You want to overbook on a holiday {date_obj}.")           
+        else:
+            output[date_obj] = {}
+
+        if output[date_obj].get(project_name) is not None:
+            output[date_obj][project_name] = output[date_obj][project_name] + float(project_duration)
+        else:
+            output[date_obj][project_name] = float(project_duration)
+
+    return dict(sorted(output.items()))
+
+def generate_with_leading_date_monthly(inputText,inputDate,start_day,output):
     projects = {}
     projectsIndex = 0
-
-    for holiday in holidays:
-        date_format = '%Y-%m-%d'
-        date_obj = datetime.datetime.strptime(holiday["date"], date_format)
-
-        output[date_obj] = {}
-        output[date_obj]['MAX'] = 7.7
-        output[date_obj]['Absence'] = 7.7
 
     #split input into projectnumber and hours save it in projects
     for line in inputText.splitlines():
@@ -234,6 +214,8 @@ def generate_with_leading_date(inputText,inputDate,start_day):
         project_duration=float(inputText[len(inputText)-1].replace(",","."))
         projects[project_name] = project_duration
         projectsIndex += 1
+
+
 
     #get first projectnumber/name
     projectsIndexKey = next(iter(projects))
@@ -286,6 +268,23 @@ def generate_with_leading_date(inputText,inputDate,start_day):
                     output[start_day]['MAX'] = 0.0
 
     return dict(sorted(output.items()))
+
+# Leading date was easier then leading project to get it right
+def generate_with_leading_date(inputText,inputDate,start_day,usedPerMonth):
+    output = {}
+
+    for holiday in holidays:
+        date_format = '%Y-%m-%d'
+        date_obj = datetime.datetime.strptime(holiday["date"], date_format)
+
+        output[date_obj] = {}
+        output[date_obj]['MAX'] = 7.7
+        output[date_obj]['Absence'] = 7.7
+
+    if usedPerMonth:
+        return generate_with_leading_date_monthly(inputText, inputDate, start_day, output)
+    else:
+        return generate_with_leading_date_daily(inputText, inputDate, start_day, output)
 
 #Load the page and wait for a specific element in the browser
 def load_page_and_wait_till_loaded(driver):
@@ -507,35 +506,6 @@ def convertLeadingDateToProjectOnTempDict(driver, output, useUI):
     for project in test:
         TableClickThroughProject(driver, project ,test[project])
 
-#Setup browser stuff only if useUI is TRUE
-def main_no_gui(inputMonth=8,inputYear=2023,inputText=testText,useUI=False,absence=[]):
-
-    #date_format = '%Y-%m-%d'
-    #date_obj = datetime.datetime.strptime(holiday["date"], date_format)
-    debugLogger("LOOP START")
-    if DEBUG:
-        absence=["2023-08-03","2023-08-11"]
-
-    inputDate=datetime.datetime(int(inputYear), int(inputMonth), 1)
-    print(holidays)
-    __init_holidays(inputDate, absence)  
-
-    start_day = get_first_business_day(inputDate.year, inputDate.month)
-
-    if True == useUI:
-        driver = setup_driver()
-        load_page_and_wait_till_loaded(driver)
-        browser_calendar_select_calendar_year_and_month(driver,inputYear,inputMonth)
-        browser_calendar_select_day(driver, start_day)
-
-    output = generate_with_leading_date(inputText,inputDate,start_day)
-
-    if True == useUI:
-        convertLeadingDateToProjectOnTempDict(driver,output,useUI)
-        driver.close()
-
-    return output
-
 def getGitHubResponse():
     global gitHubJsonResponse
     r = requests.get("https://api.github.com/repos/x3n0r/book_ppm/releases/latest", verify=False)
@@ -584,6 +554,35 @@ def getGitHubDownload():
     openApp=destinationFolder + "\\" + "book_ppm_gui.pyw"
     print(openApp)
     subprocess.Popen([sys.executable, openApp])
+
+#Setup browser stuff only if useUI is TRUE
+def main_no_gui(inputMonth=8,inputYear=2023,inputText=testText,useUI=False,absence=[],usedPerMonth=True):
+
+    #date_format = '%Y-%m-%d'
+    #date_obj = datetime.datetime.strptime(holiday["date"], date_format)
+    debugLogger("LOOP START")
+    if DEBUG:
+        absence=["2023-08-03","2023-08-11"]
+
+    inputDate=datetime.datetime(int(inputYear), int(inputMonth), 1)
+    print(holidays)
+    __init_holidays(inputDate, absence)  
+
+    start_day = get_first_business_day(inputDate.year, inputDate.month)
+
+    if True == useUI:
+        driver = setup_driver()
+        load_page_and_wait_till_loaded(driver)
+        browser_calendar_select_calendar_year_and_month(driver,inputYear,inputMonth)
+        browser_calendar_select_day(driver, start_day)
+
+    output = generate_with_leading_date(inputText,inputDate,start_day,usedPerMonth)
+
+    if True == useUI:
+        convertLeadingDateToProjectOnTempDict(driver,output,useUI)
+        driver.close()
+
+    return output
 
 if __name__ == '__main__':
     if DEBUG:
