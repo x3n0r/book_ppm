@@ -3,6 +3,7 @@ Booking time for ppm
 
 ## requirements
 ### windows
+- install edge webdriver https://developer.microsoft.com/de-de/microsoft-edge/tools/webdriver/ ( take stable-version ) and place it under C:\Users\a3270\AppData\Local\Microsoft\WindowsApps with the name MicrosoftWebDriver.exe
 - installed python on windows
 ### python modules
 These modules can be installed via Windows Powershell and the command `pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org <name>`
