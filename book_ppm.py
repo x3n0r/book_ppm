@@ -540,7 +540,7 @@ def main(inputMonth=8,inputYear=2023,inputText=testText,useUI=False,absence=[]):
 
 def getGitHubResponse():
     global gitHubJsonResponse
-    r = requests.get("https://api.github.com/repos/x3n0r/book_ppm/releases/latest")
+    r = requests.get("https://api.github.com/repos/x3n0r/book_ppm/releases/latest", verify=False)
     gitHubJsonResponse = r.json()
     debugLogger(gitHubJsonResponse)
 
@@ -574,7 +574,7 @@ def getGitHubDownload():
         debugLogger("created folder : " + downloadDirectory)
     else:
         debugLogger("folder already exists: " + downloadDirectory)
-    r = requests.get(gitHubJsonResponse["zipball_url"], allow_redirects=True)
+    r = requests.get(gitHubJsonResponse["zipball_url"], allow_redirects=True, verify=False)
     open(downloadFullPath, 'wb').write(r.content)
     shutil.unpack_archive(downloadFullPath, downloadDirectory)
     createdFolder = downloadDirectory + "\\" + next(os.walk(downloadDirectory))[1][0]
