@@ -2,6 +2,10 @@
 DRIVER          = 'edge' #edge chrome firefox safari
 COUNTRY_CODE    = 'AT' #For holiday API country code. Goto https://date.nager.at/ to have a look at available codes
 
+#Default font and fontsize when there are no settings
+DEFAULT_FONT        = 'Courier'
+DEFAULT_FONTSIZE    = 10
+
 #book_ppm_gui
 SETTINGS_FILE           = 'settings.json'   #Filename
 DEFAULT_THEME           = 'DarkBlue3'       #Default Theme
