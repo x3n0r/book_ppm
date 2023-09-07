@@ -9,7 +9,7 @@ from datetime import datetime
 import os.path
 import os
 from book_ppm_version import version as book_ppm_version
-from book_ppm import main
+from book_ppm import main_no_gui
 from book_ppm import VersionUpdateNeeded, getGitHubRelease, getGitHubBody, getGitHubDownload
 from book_ppm import output_date_to_stdout
 from book_ppm import testText
@@ -217,7 +217,7 @@ def make_update_window():
 
     return window
 
-def main():
+def main_gui():
     global settings
     #simple gui settings saved to %LocalAppData%\PySimpleGUI with filename saved in SETTINGS_FILE
     settings = sg.UserSettings(filename=SETTINGS_FILE)
@@ -292,13 +292,13 @@ def main():
             if text != "" or DEBUG:
                 if DEBUG:
                     text=testText
-                output = main(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI,absence=clickedAbsence)
+                output = main_no_gui(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI,absence=clickedAbsence)
                 make_output_window(output)
 
     window.close()
 
 if __name__ == '__main__':
     try:
-        main()
+        main_gui()
     except Exception as e:
         sg.popup_error_with_traceback('Error happened. Here is some info:', e)

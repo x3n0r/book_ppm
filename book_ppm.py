@@ -507,7 +507,7 @@ def convertLeadingDateToProjectOnTempDict(driver, output, useUI):
         TableClickThroughProject(driver, project ,test[project])
 
 #Setup browser stuff only if useUI is TRUE
-def main(inputMonth=8,inputYear=2023,inputText=testText,useUI=False,absence=[]):
+def main_no_gui(inputMonth=8,inputYear=2023,inputText=testText,useUI=False,absence=[]):
 
     #date_format = '%Y-%m-%d'
     #date_obj = datetime.datetime.strptime(holiday["date"], date_format)
@@ -586,6 +586,6 @@ def getGitHubDownload():
 
 if __name__ == '__main__':
     if DEBUG:
-        output = main()
+        output = main_no_gui()
         if output:
             print(output)
