@@ -90,6 +90,7 @@ def setup_driver():
 def __init_holidays(date, absence):
     #init holiday api so we do not need to call it 1000 times 
     global holidays
+    holidays = []
     global HOLIDAYSSET
     HOLIDAYSSET = True
     holidaysTemp = []
@@ -516,7 +517,7 @@ def main_no_gui(inputMonth=8,inputYear=2023,inputText=testText,useUI=False,absen
         absence=["2023-08-03","2023-08-11"]
 
     inputDate=datetime.datetime(int(inputYear), int(inputMonth), 1)
-
+    print(holidays)
     __init_holidays(inputDate, absence)  
 
     start_day = get_first_business_day(inputDate.year, inputDate.month)
