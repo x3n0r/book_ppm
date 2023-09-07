@@ -99,8 +99,7 @@ def __init_holidays(date, absence):
     if r.status_code == 200:
         holidaysTemp = r.json()
     else:
-        print(f"Cannot fetch holidays for {COUNTRY_CODE} for year {year}")
-        exit(-1)
+        raise Exception(f"Cannot fetch holidays for {COUNTRY_CODE} for year {year}")
 
     for holiday in holidaysTemp:
         date_format = '%Y-%m-%d'
@@ -136,8 +135,7 @@ def __init_holidays(date, absence):
 
 def __is_holiday(date):
     if not HOLIDAYSSET:
-        print("holidays not set")
-        exit (8)
+        raise Exception(f"Holidays not set, but they are already needed.")
 
     #check if date is a holiday
     for holiday in holidays:
@@ -276,8 +274,8 @@ def generate_with_leading_date(inputText,inputDate,start_day):
                 #add to maximum possible per date and fetch first date of month
                 MAX += 4.0
                 if MAX > 24:
-                    print("You are not allowed to book more than 24 hours a day!")
-                    exit(8)
+                    raise Exception(f"You are not allowed to book more than 24 hours a day!")
+
                 start_day = get_first_business_day(inputDate.year, inputDate.month)
             else:
                 #set next day and init it 
@@ -315,8 +313,8 @@ def browser_calendar_click_next_week(driver):
     try:
         d_field = driver.find_element(By.XPATH, f"//*[@id=\"x7a8ac6aa0b032200acc30e7363673acb\"]/div/div[2]/button[2]")
     except:
-        print("could not find next week button")
-        exit(0)
+        raise Exception(f"Could not find next week button.")
+
     d_field.click()
     waitForSelectLoading(driver)
 
@@ -328,8 +326,8 @@ def add_absence(driver):
     try:
         d_field = driver.find_element(By.XPATH, f"//*[@id=\"other\"]/div[5]/div[2]/button[2]")
     except:
-        print("could not find absence button")
-        exit(0)
+        raise Exception(f"Could not find absence button.")
+
     d_field.click()
     waitForSelectLoading(driver) 
 
@@ -379,8 +377,7 @@ def browser_calendar_select_day(driver,selectDate):
             break
 
     if not found:
-        print("day of " + str(selectDate) + " is disabled")
-        exit(0)
+        raise Exception(f"Day of Browser {str(selectDate)} is disabled.")
 
     waitForSelectLoading(driver) 
 
@@ -485,8 +482,8 @@ def convertLeadingDateToProjectOnTempDict(driver, output, useUI):
             elif calculatedWeeks == 0:
                 pass
             else:
-                print("WTF happend here with the isocalendar weeks")
-                exit(8)
+                raise Exception("WTF happend here with the isocalendar weeks. Could not find calculated weekdays")
+                
         #if switchWeek:
         #    switchWeek = False
         #    browser_calendar_click_next_week(driver)

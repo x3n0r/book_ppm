@@ -20,9 +20,8 @@ ALL_FONTS = sg.Text.fonts_installed_list()
 
 # Size for function name (spacers)
 NAME_SIZE           = 15
-# Default font and fontsize when there are no settings
-DEFAULT_FONT        = 'Courier'
-DEFAULT_FONTSIZE    = 10
+
+settings = None
 
 # function which return a simplegui text where Spacers are set
 def name(name, size=NAME_SIZE):
@@ -218,80 +217,88 @@ def make_update_window():
 
     return window
 
-#simple gui settings saved to %LocalAppData%\PySimpleGUI with filename saved in SETTINGS_FILE
-settings = sg.UserSettings(filename=SETTINGS_FILE)
-settings.load()
-#set default theme when no settings saved
-sg.theme(settings.get('THEME', DEFAULT_THEME))
+def main():
+    global settings
+    #simple gui settings saved to %LocalAppData%\PySimpleGUI with filename saved in SETTINGS_FILE
+    settings = sg.UserSettings(filename=SETTINGS_FILE)
+    settings.load()
+    #set default theme when no settings saved
+    sg.theme(settings.get('THEME', DEFAULT_THEME))
 
-window = make_main_window()
+    window = make_main_window()
 
-while True:
-    event, values = window.read()
-    if event == sg.WIN_CLOSED or event == 'Exit':
-        break
-    if event == 'Settings':
-        #when clicked on settings menu entry
-        (theme, font) = make_settings_window()
-        if theme != sg.theme() or font != settings.get('FONT', DEFAULT_FONT):
-            window.close()
-            sg.theme(theme)
-            settings['THEME'] = theme
-            settings['FONT'] = font
-            settings.save()
-            window = make_main_window()
-
-    if event == 'Update':
-        update_window = make_update_window()
-        while True:
-            event, values = update_window.read()
-            if event == sg.WIN_CLOSED or event == 'Ok':
-                update_window.close()
-                break
-            if event == 'Update':
-                getGitHubDownload()
-                update_window.close()
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == 'Exit':
+            break
+        if event == 'Settings':
+            #when clicked on settings menu entry
+            (theme, font) = make_settings_window()
+            if theme != sg.theme() or font != settings.get('FONT', DEFAULT_FONT):
                 window.close()
-                break
+                sg.theme(theme)
+                settings['THEME'] = theme
+                settings['FONT'] = font
+                settings.save()
+                window = make_main_window()
 
-    if event  == 'Submit':
-        year = int(values['-inputYear-'])
-        month = datetime.strptime(values['-inputMonth-'], '%B').month 
-        text = values['-inputText-']
-        useBrowserUI = values['-useBrowserUI-']
-
-        if text == "" and not DEBUG:
-            continue
-
-        answer = sg.popup_yes_no("Do you have any absence day to book(except holidays)?",  title="YesNo", keep_on_top=True)
-        #print ("You clicked", answer)
-        clickedAbsence=[]
-        winClosed = False
-        if answer == 'Yes':
-            absence_window = make_absence_window(inputYear=year,inputMonth=month)
+        if event == 'Update':
+            update_window = make_update_window()
             while True:
-                event, values = absence_window.read()
-                if event == sg.WIN_CLOSED or event == 'Exit':
-                    winClosed = True
+                event, values = update_window.read()
+                if event == sg.WIN_CLOSED or event == 'Ok':
+                    update_window.close()
                     break
-                if event == "Ok":
-                    #print("GetAll Clicked Items")
-
-                    for d in [x for x in Calendar().itermonthdates(year, month) if x.month == month]:
-                        if d.isoweekday() > 5:
-                            continue    
-                        value = values['-'+str(d)+'-']
-                        if value:
-                            clickedAbsence.append(str(d))
+                if event == 'Update':
+                    getGitHubDownload()
+                    update_window.close()
+                    window.close()
                     break
-        if winClosed:
-            continue
 
-        #run book_ppm program
-        if text != "" or DEBUG:
-            if DEBUG:
-                text=testText
-            output = main(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI,absence=clickedAbsence)
-            make_output_window(output)
+        if event  == 'Submit': 
+            year = int(values['-inputYear-'])
+            month = datetime.strptime(values['-inputMonth-'], '%B').month 
+            text = values['-inputText-']
+            useBrowserUI = values['-useBrowserUI-']
 
-window.close()
+            if text == "" and not DEBUG:
+                continue
+
+            answer = sg.popup_yes_no("Do you have any absence day to book(except holidays)?",  title="YesNo", keep_on_top=True)
+            #print ("You clicked", answer)
+            clickedAbsence=[]
+            winClosed = False
+            if answer == 'Yes':
+                absence_window = make_absence_window(inputYear=year,inputMonth=month)
+                while True:
+                    event, values = absence_window.read()
+                    if event == sg.WIN_CLOSED or event == 'Exit':
+                        winClosed = True
+                        break
+                    if event == "Ok":
+                        #print("GetAll Clicked Items")
+
+                        for d in [x for x in Calendar().itermonthdates(year, month) if x.month == month]:
+                            if d.isoweekday() > 5:
+                                continue    
+                            value = values['-'+str(d)+'-']
+                            if value:
+                                clickedAbsence.append(str(d))
+                        break
+            if winClosed:
+                continue
+
+            #run book_ppm program
+            if text != "" or DEBUG:
+                if DEBUG:
+                    text=testText
+                output = main(inputYear=year,inputMonth=month,inputText=text,useUI=useBrowserUI,absence=clickedAbsence)
+                make_output_window(output)
+
+    window.close()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        sg.popup_error_with_traceback('Error happened. Here is some info:', e)
